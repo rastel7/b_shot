@@ -389,6 +389,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "b_shot"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_aseprite_ultra",
+ "bevy_remote_inspector",
+ "rand 0.9.1",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -414,16 +424,6 @@ name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
-
-[[package]]
-name = "bevy"
-version = "0.1.0"
-dependencies = [
- "bevy 0.15.3",
- "bevy_aseprite_ultra",
- "bevy_remote_inspector",
- "rand 0.9.1",
-]
 
 [[package]]
 name = "bevy"
@@ -505,7 +505,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe5ac2d20e051bd06e2f7e3cc06bfe9c8c84fc0c8eb79e68e65ffee21912e7f"
 dependencies = [
  "aseprite-loader",
- "bevy 0.15.3",
+ "bevy",
  "thiserror 2.0.12",
  "uuid",
 ]
@@ -1088,7 +1088,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db92f76cb802970b15a8e5bc7bef1f6bc73b7eb7d5717c249b8a98c8a5b1a781"
 dependencies = [
  "anyhow",
- "bevy 0.15.3",
+ "bevy",
  "bevy_remote_stream",
  "petgraph",
  "serde",
@@ -1102,7 +1102,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d124ad903eb8584e58da4e3daa59ba17b90f1aefa1e147d64b238bf08bb61914"
 dependencies = [
  "anyhow",
- "bevy 0.15.3",
+ "bevy",
  "futures-util",
  "http-body-util",
  "hyper",
