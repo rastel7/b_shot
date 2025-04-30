@@ -5,12 +5,12 @@ use crate::system_resource::{OneTexture, Vec2toVec3};
 use bevy::{prelude::*, state::commands, *};
 use bevy_aseprite_ultra::prelude::{AseSpriteSlice, Aseprite};
 use crate::explosion::ExplosionType;
-const ENEMY2_RADIUS: f32 = 10.0;
+const ENEMY2_RADIUS: f32 = 14.0;
 const ENEMY2_DEFAULT_RETURN: bool = false;
 const ENEMY2_DEFAULT_WAIT_TIME: f32 = 3.0;
 const ENEMY2_DAFAULT_VELOCITY: f32 = 70.0;
 const ENEMY2_DAFAULT_BULLET_VELOCITY: f32 = 130.0;
-const ENEMY2_DEFAULT_HP: f32 = 400.0;
+const ENEMY2_DEFAULT_HP: f32 = 800.0;
 #[derive(Component, Default)]
 pub struct Enemy2 {
     generated_time: f32,
@@ -106,6 +106,7 @@ impl Enemy2Spawner {
         let entity = commands
             .spawn((
                 Name::new("Enemy2"),
+                Enemy::new(vec![ENEMY2_DEFAULT_HP], 2500, 10,ExplosionType::Enemy),
                 Enemy2 {
                     generated_time: 0.0,
                     arrive_time: None,
@@ -127,7 +128,7 @@ impl Enemy2Spawner {
                     ..default()
                 },
                 transform,
-                Enemy::new(vec![ENEMY2_DEFAULT_HP], 800, 10,ExplosionType::Enemy),
+                StateScoped(crate::GameState::InGame)
             ))
             .id();
         add_collision(commands, entity, ENEMY2_RADIUS, Color::srgb(0.5, 0.0, 0.0));

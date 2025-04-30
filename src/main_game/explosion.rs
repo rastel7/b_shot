@@ -112,7 +112,7 @@ pub fn update_explosion(
         let name = explosion.get_sprite_name();
         if name.is_none() {
             // エフェクト時間切れのため消す
-            commands.entity(entity).try_despawn_recursive();
+            commands.entity(entity).despawn_recursive();
             return;
         }
         let name = name.unwrap();

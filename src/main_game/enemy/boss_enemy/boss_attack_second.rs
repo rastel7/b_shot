@@ -50,7 +50,6 @@ pub fn update_boss_enemy_attack_two(
         if boss.prev_shot_time >= 0.0 {
             let mut diff = 0.0;
             if (unshot_range.end <= modtime && modtime <= unshot_range.end + prev_shot_th) {
-                info!("{}", boss.generated_time);
                 diff = modtime + -unshot_range.end;
                 boss.prev_shot_time = diff - prev_shot_th;
             } else {

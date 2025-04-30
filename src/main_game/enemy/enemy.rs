@@ -1,9 +1,9 @@
-use crate::main_game::score::{GameScore, ScoreTipEvent};
-use crate::system_consts::SCREEN_VIRTIAL_HALF_SIZE;
-use bevy::prelude::*;
 use super::super::explosion::ExplosionType;
 use super::boss_enemy::BossEnemy;
 use super::middle_boss::MiddleBoss;
+use crate::main_game::score::{GameScore, ScoreTipEvent};
+use crate::system_consts::SCREEN_VIRTIAL_HALF_SIZE;
+use bevy::prelude::*;
 // すべてのEnemyにつけるコンポーネント
 #[derive(Component)]
 pub struct Enemy {
@@ -13,10 +13,17 @@ pub struct Enemy {
     pub is_hited_player: bool,
     pub score: u32,
     pub score_tip_num: usize,
-    pub explosition_type:ExplosionType
+    pub explosition_type: ExplosionType,
+    pub is_destroy_touch_player: bool,
+    pub is_out_of_screen: bool,
 }
 impl Enemy {
-    pub fn new(hp: Vec<f32>, score: u32, score_tip_num: usize,explositon_type:ExplosionType) -> Self {
+    pub fn new(
+        hp: Vec<f32>,
+        score: u32,
+        score_tip_num: usize,
+        explositon_type: ExplosionType,
+    ) -> Self {
         Self {
             hp_index: 0,
             initial_hp: hp.clone(),
@@ -24,7 +31,9 @@ impl Enemy {
             is_hited_player: false,
             score: score,
             score_tip_num: score_tip_num,
-            explosition_type: explositon_type
+            explosition_type: explositon_type,
+            is_destroy_touch_player: true,
+            is_out_of_screen: false,
         }
     }
 }
@@ -46,22 +55,30 @@ pub fn if_despawn_destroy_enemy(
     mut enemy_query: Query<(Entity, &mut Enemy, &Transform, &Name)>,
     mut game_score: ResMut<GameScore>,
     mut writer: EventWriter<ScoreTipEvent>,
+
+    mut increment_life_writer: EventWriter<crate::life::IncrementLife>,
 ) {
     for enemy in enemy_query.iter_mut() {
-        if enemy.1.hp[enemy.1.hp_index] <= 0.0 {
+        // 画面外判定
+        let mut need_despawn = false;
+        if enemy.1.is_out_of_screen {
+            need_despawn = true;
+        } else if enemy.1.hp[enemy.1.hp_index] <= 0.0 {
             // スコア加算
-            game_score.add_score(enemy.1.score);
+            game_score.add_score(enemy.1.score, &mut increment_life_writer);
             // チップ発生
             writer.send(ScoreTipEvent {
                 position: enemy.2.translation.xy(),
-                score: 100,
+                score: 300,
                 num: enemy.1.score_tip_num,
             });
-            // 正常にプレイヤーの攻撃で敵を倒したとき
-            commands.entity(enemy.0).try_despawn_recursive();
+            need_despawn = true;
+        } else if enemy.1.is_hited_player {
+            need_despawn = true;
         }
-        if enemy.1.is_hited_player {
-            commands.entity(enemy.0).try_despawn_recursive();
+        if need_despawn {
+            info!("Despawn {} {}", enemy.3, enemy.0);
+            commands.entity(enemy.0).despawn_recursive();
         }
     }
 }
@@ -73,10 +90,9 @@ pub fn if_despawn_outrange_enemy(
         (Without<MiddleBoss>, Without<BossEnemy>),
     >,
 ) {
-    for enemy in enemy_query.iter_mut() {
+    for mut enemy in enemy_query.iter_mut() {
         if is_out_of_range_screen_enemy(&enemy.2) {
-            info!("Despawn {} {}", enemy.3, enemy.0);
-            commands.entity(enemy.0).try_despawn_recursive();
+            enemy.1.is_out_of_screen = true;
         }
     }
 }

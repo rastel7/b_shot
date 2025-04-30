@@ -1,10 +1,6 @@
-use std::cmp::max;
-use std::collections::btree_map::Range;
-use std::f32;
-use std::ops::RangeBounds;
-use crate::explosion::ExplosionType;
 use super::enemy_bullet::enemy_bullet_0;
 use super::{enemy::Enemy, enemy_0, enemy_reader};
+use crate::explosion::ExplosionType;
 use crate::main_game::collision::*;
 use crate::system_consts;
 use crate::system_resource::{OneTexture, Vec2toVec3};
@@ -12,6 +8,10 @@ use bevy::ecs::query;
 use bevy::text::cosmic_text::ttf_parser::Tag;
 use bevy::{prelude::*, state::commands, *};
 use bevy_aseprite_ultra::prelude::{AseSpriteSlice, Aseprite};
+use std::cmp::max;
+use std::collections::btree_map::Range;
+use std::f32;
+use std::ops::RangeBounds;
 const MIDDLEBOSSRADIUS: f32 = 32.0;
 const SHOT_GENERATE_POINT_DIFF: [(f32, f32); 4] =
     [(-35.0, -20.0), (-20.0, -30.0), (20.0, -30.0), (35.0, -20.0)];
@@ -161,6 +161,8 @@ pub fn spawn_middle_boss(
 ) -> Entity {
     let transform =
         Transform::from_translation(Vec3::new(initial_position.x, initial_position.y, -3.0));
+    let mut enemy = Enemy::new(vec![4000.0], 10000, 30, ExplosionType::BossEnemy);
+    enemy.is_destroy_touch_player = false;
     let entity = commands
         .spawn((
             Name::new("MiddleBoss"),
@@ -184,7 +186,8 @@ pub fn spawn_middle_boss(
                 ..default()
             },
             transform,
-            Enemy::new(vec![3000.0], 10000, 30,ExplosionType::BossEnemy),
+            enemy,
+            StateScoped(crate::GameState::InGame),
         ))
         .id();
     add_collision(

@@ -1,6 +1,10 @@
 #![allow(warnings)]
+use std::io::Write;
+
 use bevy::audio::{AudioPlugin, AudioSource};
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+use bevy::ecs::query;
+use bevy::pbr::LightEntity;
 use bevy::{
     ecs::{schedule::common_conditions, system},
     image::ImageSamplerDescriptor,
@@ -60,17 +64,22 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .insert_resource(ClearColor(Color::srgb(0.6, 0.6, 0.7)))
         .insert_resource::<score::GameScore>(score::GameScore::default())
+        .insert_resource::<life::Life>(life::Life::new())
         .init_state::<GameState>()
         .add_event::<ExplosionEvent>()
         .add_event::<ScoreTipEvent>()
         .add_event::<bgm::StopStageBGMEvent>()
         .add_event::<bgm::StartBossBGMEvent>()
+        .add_event::<life::IncrementLife>()
         .add_event::<se::PlaySEEvent>()
         .enable_state_scoped_entities::<GameState>()
         .add_systems(Startup, init_game)
         .add_systems(
             PostStartup,
-            (fps::generate_fps_drawer, score::init_score_renderer),
+            (
+                fps::generate_fps_drawer,
+                score::init_score_renderer,
+            ),
         )
         .add_systems(
             OnEnter(GameState::TitleMenu),
@@ -103,6 +112,7 @@ fn main() {
                 score::set_game_score_zero,
                 enemy_hp_gauge::initialize_enemy_hp_gauge,
                 bgm::set_stage_bgm,
+                life::setup_player_life,
             ),
         )
         .add_systems(
@@ -180,12 +190,18 @@ fn main() {
                 bgm::update_start_boss_bgm,
                 bgm::update_decrease_bgm,
                 bgm::update_increase_bgm,
+                game_clear::update_game_clear,
+                game_clear::update_game_clear_black_wipe,
+                game_clear::update_game_clear_logo,
+                life::update_life_ui,
+                life::update_life,
             )
                 .run_if(in_state(GameState::InGame)),
         )
         .add_systems(
             PostUpdate,
             ((
+                is_need_gameclear_entity.before(enemy::if_despawn_destroy_enemy),
                 enemy::if_despawn_destroy_enemy,
                 destroy_hited_player_shot,
                 enemy_bullet::if_despawn_enemy_bullet,
@@ -195,6 +211,8 @@ fn main() {
                 score::spawn_score_tip.after(enemy::if_despawn_destroy_enemy),
                 // SE再生
                 se::update_se_event,
+                // チップ破壊
+                score::despawn_scoretip.after(score::spawn_score_tip),
             ))
                 .run_if(in_state(GameState::InGame)),
         )
@@ -248,5 +266,23 @@ fn loging_state(app_state: Res<State<GameState>>) {
 fn reset_button(keys: Res<ButtonInput<KeyCode>>, mut app_state: ResMut<NextState<GameState>>) {
     if keys.just_pressed(KeyCode::Escape) {
         app_state.set(GameState::TitleMenu);
+    }
+}
+
+fn reset_entity_log() {
+    std::fs::remove_file("log.txt");
+}
+fn entity_log(query: Query<(Entity, &Name)>) {
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("log.txt");
+    if file.is_err() {
+        file = std::fs::File::create("log.txt");
+    }
+    let mut file = file.unwrap();
+    let mut contents = String::new();
+    for (entity, name) in query.iter() {
+        file.write_fmt(format_args!("{:?} {:?}\n", entity, name));
     }
 }

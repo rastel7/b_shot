@@ -123,7 +123,8 @@ pub fn spawn_enemy_1(
                 ..default()
             },
             transform,
-            Enemy::new(vec![ENEMY1_HP], 300, 5,ExplosionType::Enemy),
+            Enemy::new(vec![ENEMY1_HP], 900, 5,ExplosionType::Enemy),
+            StateScoped(crate::GameState::InGame)
         ))
         .id();
     add_collision(commands, entity, ENEMY1_RADIUS, Color::srgb(0.5, 0.0, 0.0));

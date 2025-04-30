@@ -8,6 +8,7 @@ use bevy::{
 };
 use bevy_aseprite_ultra::prelude::{AseSpriteSlice, Aseprite};
 
+use super::game_clear::{self, GameClear};
 use super::{
     collision::{self, Collision},
     enemy::enemy_bullet::enemy_bullet::EnemyBullet,
@@ -43,15 +44,21 @@ pub struct Player {
     is_cotroled_auto: bool,
 }
 impl Player {
-    pub fn AddDamage(
+    pub fn add_damage(
         &mut self,
         mut commands: Commands,
         entity: Entity,
         collision: &mut Collision,
         explosion_writer: &mut EventWriter<explosion::ExplosionEvent>,
         player_position: Vec2,
+        life: &mut ResMut<super::life::Life>,
     ) {
         self.invisible_time = PLAYER_DAMAGED_INVISIBLE_TIME;
+
+        life.life -= 1;
+        if life.life < 0 {
+            game_clear::spawn_game_end_entity(commands.reborrow());
+        }
         commands
             .entity(entity)
             .insert(hited_player::HitedPlayerMovement::default());
@@ -90,6 +97,7 @@ pub struct PlayerShot {
     velocity: Vec2,
     pub damage: f32,
     pub is_hit: bool,
+    pub is_out_screen: bool,
 }
 #[derive(Component)]
 pub struct PlayerStraightShot;
@@ -152,15 +160,18 @@ pub fn update_player(
     straight_shot: Query<&PlayerStraightShot>,
     little_slanting_shot: Query<&PlayerLittleSlantingShot>,
     slanting_shot: Query<&PlayerLittleSlantingShot>,
+    game_clear: Query<&GameClear>,
     mut se_writer: EventWriter<crate::se::PlaySEEvent>,
 ) {
     if player_query.get_single().is_err() {
         //HitedPlayerMovementがついていたらこのコンポーネントでは何もしない
         return;
     }
+
     let mut player = player_query.single_mut();
     // このPlayerコンポーネントで操作している証拠
     player.0.is_cotroled_auto = false;
+
     // 無敵エフェクト
     {
         // 無敵か否かの更新
@@ -171,6 +182,13 @@ pub fn update_player(
             player.0.invisible_time += time.delta().as_secs_f32();
         }
     }
+    if game_clear.get_single().is_ok() {
+        // クリアイベント後は動かない
+        // 撃っている判定も消す
+        player.0.is_shoting = false;
+        return;
+    }
+
     {
         let mut player_transform = player.1.reborrow();
         move_player(
@@ -372,6 +390,7 @@ fn shot_generation(
                 velocity: velocity,
                 damage: PLAYER_SHOT_DAMAGE,
                 is_hit: false,
+                is_out_screen: false,
             },
             AseSpriteSlice {
                 name: sprite_name.clone(),
@@ -379,7 +398,7 @@ fn shot_generation(
 
                 ..default()
             },
-            Visibility::Hidden,
+            Visibility::Inherited,
             StateScoped(crate::GameState::InGame),
         ));
         if sprite_name == "StraightBullet" {
@@ -466,7 +485,7 @@ pub fn destroy_hited_player_shot(
     shot_query: Query<(Entity, &mut PlayerShot)>,
 ) {
     for shot in shot_query.into_iter() {
-        if shot.1.is_hit {
+        if shot.1.is_hit || shot.1.is_out_screen {
             commands.entity(shot.0).despawn_recursive();
         }
     }
@@ -510,17 +529,18 @@ pub fn set_dyson_hit_bullet_velocity_ratency(
 
 pub fn destroy_out_display_player_bullet(
     mut commands: Commands,
-    bullet_query: Query<(Entity, &Transform), With<PlayerShot>>,
+    mut bullet_query: Query<(Entity, &Transform, &mut PlayerShot)>,
 ) {
-    for (entity, transform) in bullet_query.iter() {
+    for (entity, transform, mut playershot) in bullet_query.iter_mut() {
         let position = transform.translation;
+        let lim: f32 = 5.0;
         // 画面外にいっぱい出てたら消す
-        let is_out_of_screen = !(-MOVE_LIMIT.x * 1.1 <= position.x
-            && position.x <= MOVE_LIMIT.x * 1.1
-            && -MOVE_LIMIT.y * 1.1 <= position.y
-            && position.y <= MOVE_LIMIT.y * 1.1);
+        let is_out_of_screen = !(-MOVE_LIMIT.x + lim <= position.x
+            && position.x <= MOVE_LIMIT.x + lim
+            && -MOVE_LIMIT.y - lim <= position.y
+            && position.y <= MOVE_LIMIT.y + lim);
         if is_out_of_screen {
-            commands.entity(entity).despawn_recursive();
+            playershot.is_out_screen = true;
         }
     }
 }

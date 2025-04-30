@@ -6,13 +6,16 @@ use bevy::{
 #[derive(Event)]
 pub struct PlaySEEvent(pub SEType);
 
-
-#[derive(PartialEq,Eq,Clone,Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum SEType {
     HitPlayerShot,
     PlayerDyson,
     DestroyEnemy,
     DestroyBoss,
+    ClearFanfare,
+    GetLife,
+    PickTip,
+    GameOver,
 }
 
 impl std::fmt::Display for SEType {
@@ -22,6 +25,10 @@ impl std::fmt::Display for SEType {
             SEType::PlayerDyson => write!(f, "PlayerDyson"),
             SEType::DestroyEnemy => write!(f, "DestroyEnemy"),
             SEType::DestroyBoss => write!(f, "DestroyBoss"),
+            SEType::ClearFanfare => write!(f, "ClearFanfare"),
+            SEType::GetLife => write!(f, "GetLife"),
+            SEType::PickTip => write!(f, "PickTip"),
+            SEType::GameOver => write!(f, "GameOver"),
         }
     }
 }
@@ -32,15 +39,23 @@ impl SEType {
             Self::PlayerDyson => "sounds/shot_dyson.ogg",
             Self::DestroyEnemy => "sounds/destroy_enemy.ogg",
             Self::DestroyBoss => "sounds/destroy_boss.ogg",
+            Self::ClearFanfare => "sounds/clear_fanfare.ogg",
+            Self::GetLife => "sounds/get_life.ogg",
+            Self::PickTip => "sounds/pick_score_tip.ogg",
+            Self::GameOver => "sounds/game_over.ogg",
         }
     }
     pub fn get_volume(&self) -> f32 {
-      match self {
-        Self::HitPlayerShot => 0.05,
-        Self::PlayerDyson => 0.2,
-        Self::DestroyEnemy => 0.3,
-        Self::DestroyBoss => 0.5,
-    }
+        match self {
+            Self::HitPlayerShot => 0.05,
+            Self::PlayerDyson => 0.2,
+            Self::DestroyEnemy => 0.3,
+            Self::DestroyBoss => 0.5,
+            Self::ClearFanfare => 0.5,
+            Self::GetLife => 0.5,
+            Self::PickTip => 0.1,
+            Self::GameOver => 0.5,
+        }
     }
 }
 

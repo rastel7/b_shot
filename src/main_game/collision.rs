@@ -8,6 +8,8 @@ use super::explosion::ExplosionEvent;
 use super::score::GameScore;
 use super::score::ScoreTip;
 use super::score::ScoreTipEvent;
+use super::{game_clear, life};
+use crate::bgm::BossBGM;
 use crate::enemy::*;
 use crate::player::*;
 use crate::se::PlaySEEvent;
@@ -52,7 +54,7 @@ impl Collision {
 pub fn add_collision(commands: &mut Commands, entity: Entity, radius: f32, color: Color) {
     commands.entity(entity).insert(Collision::new(radius));
     // 以下デバッグ用表示
-
+    return;
     let mut color = color;
     color.set_alpha(0.6);
     let child = commands
@@ -221,12 +223,9 @@ pub fn solve_player_dyson_collision(
 pub fn solve_enemy_to_player_collision(
     mut commands: Commands,
     mut player_query: Query<(Entity, &mut Player, &mut Transform, &mut Collision), Without<Enemy>>,
-    mut enemy__query: Query<
-        (Entity, &mut Enemy, &mut Transform, &Collision),
-        (Without<Player>, Without<BossEnemy>, Without<MiddleBoss>),
-    >,
+    mut enemy__query: Query<(Entity, &mut Enemy, &mut Transform, &Collision), (Without<Player>)>,
     mut explosion_writer: EventWriter<ExplosionEvent>,
-    mut game_score: ResMut<GameScore>,
+    mut life: ResMut<super::life::Life>,
 ) {
     let player = player_query.get_single_mut();
     if player.is_err() {
@@ -244,15 +243,17 @@ pub fn solve_enemy_to_player_collision(
             true,
         );
         if is_hit {
-            enemy.1.is_hited_player = true;
-            game_score.sub_score(1);
+            if enemy.1.is_destroy_touch_player {
+                enemy.1.is_hited_player = true;
+            }
             let player_collision = player.3.as_mut();
-            player.1.AddDamage(
+            player.1.add_damage(
                 commands.reborrow(),
                 player.0,
                 player_collision,
                 &mut explosion_writer,
                 player.2.translation.xy(),
+                &mut life,
             );
         }
     }
@@ -273,6 +274,7 @@ pub fn solve_enemy_bullet0_collision(
     >,
     explosion_writer: EventWriter<ExplosionEvent>,
     mut game_score: ResMut<GameScore>,
+    mut life: ResMut<super::life::Life>,
 ) {
     let player = player_query.get_single_mut();
     if player.is_err() {
@@ -293,13 +295,13 @@ pub fn solve_enemy_bullet0_collision(
         if is_hit {
             enemy_bullet_0.1.need_despawn = true;
             let player_collision = player.3.as_mut();
-            game_score.sub_score(1);
-            player.1.AddDamage(
+            player.1.add_damage(
                 commands.reborrow(),
                 player.0,
                 player_collision,
                 &mut explosion_writer,
                 player.2.translation.xy(),
+                &mut life,
             );
         }
     }
@@ -307,9 +309,11 @@ pub fn solve_enemy_bullet0_collision(
 
 pub fn solve_score_tip_collision(
     mut commands: Commands,
-    mut tip_query: Query<(&ScoreTip, &Transform, &Collision, Entity), Without<Player>>,
+    mut tip_query: Query<(&mut ScoreTip, &Transform, &Collision, Entity), Without<Player>>,
     player_query: Query<(&Player, &Transform, &Collision), Without<ScoreTip>>,
     mut game_score: ResMut<GameScore>,
+    mut increment_life_writer: EventWriter<life::IncrementLife>,
+    mut se_writer: EventWriter<crate::se::PlaySEEvent>,
 ) {
     let player = player_query.get_single();
     if player.is_err() {
@@ -317,7 +321,7 @@ pub fn solve_score_tip_collision(
     }
     let player = player.unwrap();
 
-    for (tip, transorm, colision, entity) in tip_query.iter_mut() {
+    for (mut tip, transorm, colision, entity) in tip_query.iter_mut() {
         if Collision::is_hit(
             colision,
             player.2,
@@ -325,9 +329,25 @@ pub fn solve_score_tip_collision(
             &player.1.translation,
             false,
         ) {
-            game_score.add_score(tip.score);
+            game_score.add_score(tip.score, &mut increment_life_writer);
+            se_writer.send(PlaySEEvent(crate::se::SEType::PickTip));
+            tip.is_need_despawn = true;
+        }
+    }
+}
 
-            commands.entity(entity).try_despawn_recursive();
+pub fn is_need_gameclear_entity(
+    mut commands: Commands,
+    query: Query<&Enemy, With<BossEnemy>>,
+    boss_bgm_query: Query<(Entity), With<BossBGM>>,
+    mut bullet_query: Query<&mut Collision, With<EnemyBullet>>,
+) {
+    for boss in query.iter() {
+        if boss.hp_index + 1 == boss.hp.len() && boss.hp[boss.hp_index] <= 0.0 {
+            game_clear::spawn_game_clear_entity(commands.reborrow());
+            for mut col in bullet_query.iter_mut() {
+                col.invisible = true;
+            }
         }
     }
 }

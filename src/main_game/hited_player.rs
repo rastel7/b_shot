@@ -37,10 +37,15 @@ pub fn update_hited_player_movement(
         &mut Visibility,
     )>,
     time: Res<Time>,
+    game_clear: Query<&super::game_clear::GameClear>,
 ) {
     let mut player = player_query.get_single_mut();
     if player.is_err() {
         // 無いので終了
+        return;
+    }
+    let is_clear = game_clear.get_single().is_ok();
+    if is_clear{
         return;
     }
     let mut player = player.unwrap();

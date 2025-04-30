@@ -74,6 +74,13 @@ fn spawn_boss_enemy(
     taraget_position: Vec2,
 ) -> Entity {
     let transform = Transform::from_xyz(initial_position.x, initial_position.y, -5.0);
+    let mut enemy = Enemy::new(
+        vec![5000.0, 6000.0, 3000.0],
+        50000,
+        100,
+        ExplosionType::BossEnemy,
+    );
+    enemy.is_destroy_touch_player = false;
     let entity = commands
         .spawn((
             Name::new("BossEnemy"),
@@ -81,12 +88,7 @@ fn spawn_boss_enemy(
             EnemyGenerateTimeStopper,
             StateScoped(game_state::GameState::InGame),
             transform,
-            Enemy::new(
-                vec![3000.0, 3000.0, 3000.0],
-                50000,
-                100,
-                ExplosionType::BossEnemy,
-            ),
+            enemy,
             AseSpriteSlice {
                 name: "BossEnemy".into(),
                 aseprite: (*one_texture).clone_weak(),

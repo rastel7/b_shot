@@ -34,7 +34,7 @@ pub fn if_despawn_enemy_bullet(
     }
 }
 
-const SCREEN_LIMIT_ADD: f32 = 12.0;
+const SCREEN_LIMIT_ADD: f32 = 16.0;
 fn is_out_of_range_screen_bullet(transform: &Transform, collision_radius: f32) -> bool {
     let position = transform.translation;
     let mut maxsize = crate::system_consts::SCREEN_VIRTIAL_HALF_SIZE;

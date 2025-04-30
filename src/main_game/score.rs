@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+
 use crate::game_state::GameState;
 use crate::system_consts::SCREEN_VIRTIAL_HALF_SIZE;
 use crate::system_resource::{SystemsTexture, ZeroTexture};
@@ -8,15 +10,23 @@ use bevy_aseprite_ultra::prelude::*;
 use rand::Rng;
 
 use super::collision::{self, Collision};
+use super::life::IncrementLife;
 use super::player::{self, Player};
+
+const SCORE_PATH: &str = "./data.log";
+const LIFEUP_SCORE: u32 = 50000;
 #[derive(Resource, Default)]
 pub struct GameScore(u32);
 impl GameScore {
     pub fn reset_score(&mut self) {
         self.0 = 0;
     }
-    pub fn add_score(&mut self, add: u32) {
+    pub fn add_score(&mut self, add: u32, increment_life_writer: &mut EventWriter<IncrementLife>) {
+        let prev =self.0;
         self.0 += add;
+        if (self.0 as f32 / LIFEUP_SCORE as f32).floor() > (prev as f32 / LIFEUP_SCORE as f32).floor(){
+            increment_life_writer.send(IncrementLife(1));
+        }
     }
     pub fn get_score(&self) -> u32 {
         self.0
@@ -41,6 +51,8 @@ pub struct ScoreTip {
     attenuationer_velocity: EasingCurve<f32>,
 
     is_end_strew: bool,
+
+    pub is_need_despawn: bool,
 }
 #[derive(Event, Clone, Copy)]
 pub struct ScoreTipEvent {
@@ -49,9 +61,32 @@ pub struct ScoreTipEvent {
     pub score: u32,
 }
 pub fn reset_score(mut game_score: ResMut<GameScore>) {
-    game_score.0 = 1234567;
+    game_score.0 = read_high_score();
+    info!("reset {}", game_score.0);
 }
 
+pub fn read_high_score() -> u32 {
+    let mut file = std::fs::OpenOptions::new().read(true).open(SCORE_PATH);
+    if file.is_err() {
+        return 0;
+    }
+    let mut file = file.unwrap();
+    let mut buf = String::new();
+    file.read_to_string(&mut buf);
+    return buf.parse::<u32>().unwrap_or(0);
+}
+
+pub fn save_score(new_score: u32) {
+    if read_high_score() > new_score {
+        return;
+    };
+
+    let mut file = std::fs::OpenOptions::new().write(true).open(SCORE_PATH);
+    if file.is_err() {
+        file = std::fs::File::create(SCORE_PATH);
+    }
+    file.unwrap().write_fmt(format_args!("{}", new_score));
+}
 pub fn init_score_renderer(mut commands: Commands, system_resource: Res<SystemsTexture>) {
     let score_renderer_parent = commands
         .spawn((
@@ -59,7 +94,7 @@ pub fn init_score_renderer(mut commands: Commands, system_resource: Res<SystemsT
             Transform::from_xyz(
                 -SCREEN_VIRTIAL_HALF_SIZE.0,
                 SCREEN_VIRTIAL_HALF_SIZE.1,
-                20.0,
+                220.0,
             ),
             Visibility::Visible,
         ))
@@ -124,12 +159,13 @@ pub fn spawn_score_tip(
                             EaseFunction::SineIn,
                         ),
                         is_end_strew: false,
+                        is_need_despawn: false,
                     },
                     AseSpriteSlice {
                         name: "ScoreTip".into(),
                         aseprite: zero_texutre.clone(),
                     },
-                    Transform::from_xyz(event.position.x, event.position.y, -15.0),
+                    Transform::from_xyz(event.position.x, event.position.y, 0.0),
                     StateScoped(GameState::InGame),
                 ))
                 .id();
@@ -151,6 +187,9 @@ pub fn update_score_tip(
 ) {
     let delta = time.delta().as_secs_f32();
     for mut tip in tip_query.iter_mut() {
+        if tip.0.is_need_despawn {
+            continue;
+        }
         tip.0.generater_time += delta;
         if !tip.0.is_end_strew {
             let t = tip
@@ -187,7 +226,7 @@ pub fn update_score_tip(
         tip.1.translation.x += tip.0.velocity.x * delta;
         tip.1.translation.y += tip.0.velocity.y * delta;
         if is_out_of_range_screen_tip(&tip.1, tip.2.radius()) {
-            commands.entity(tip.3).try_despawn_recursive();
+            tip.0.is_need_despawn = true;
         }
     }
 }
@@ -202,4 +241,12 @@ fn is_out_of_range_screen_tip(transform: &Transform, collision_radius: f32) -> b
         && position.x <= maxsize.0
         && -maxsize.1 <= position.y
         && position.y <= maxsize.1)
+}
+
+pub fn despawn_scoretip(mut commands: Commands, query: Query<(&ScoreTip, Entity)>) {
+    for (tip, entity) in query.iter() {
+        if tip.is_need_despawn {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }

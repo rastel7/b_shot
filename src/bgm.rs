@@ -16,7 +16,7 @@ pub struct StopStageBGMEvent;
 #[derive(Event)]
 pub struct StartBossBGMEvent;
 #[derive(Component)]
-pub struct DecreaseBGM(f32);
+pub struct DecreaseBGM(pub f32);
 #[derive(Component)]
 pub struct IncreaseBGM(f32, f32);
 pub fn set_stage_bgm(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -76,7 +76,7 @@ pub fn update_decrease_bgm(
         let delta = time.delta().as_secs_f32();
         let vol = audiosink.volume() - delta * decrease.0;
         if vol <= 0.0 {
-            commands.entity(entity).try_despawn();
+            commands.entity(entity).despawn();
             continue;
         }
         audiosink.set_volume(vol);

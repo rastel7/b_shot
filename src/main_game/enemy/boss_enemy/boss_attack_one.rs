@@ -21,9 +21,9 @@ pub fn update_boss_attack_one(
     one_texture: Res<OneTexture>,
     time: Res<Time>,
 ) {
-    let freq = 1.0;
+    let freq = 0.6;
     let delta_time = time.delta().as_secs_f32();
-    let spawn_candidates = [(80.0, -30.0), (60.0, -35.0), (40.0, -40.0), (20.0, -45.0)];
+    let spawn_candidates = [(100.0, -30.0),(80.0, -30.0), (60.0, -35.0), (40.0, -40.0), (20.0, -45.0)];
     for (mut boss_attack, transform, enemy, entity) in query.iter_mut() {
         if enemy.hp_index != 0 {
             commands.entity(entity).remove::<BossEnemyAttackOne>();
