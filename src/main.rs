@@ -36,7 +36,7 @@ use system_consts::WINDOW_SIZE;
 mod bgm;
 mod fps;
 mod game_state;
-mod main_game;
+pub mod main_game;
 mod se;
 mod system_consts;
 mod system_resource;

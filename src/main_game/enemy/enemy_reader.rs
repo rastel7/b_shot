@@ -3,6 +3,7 @@ use super::enemy_0::{self, Enemy0Spawner};
 use super::enemy_1::{self, Enemy1Spawner};
 use super::enemy_2::{self, Enemy2Spawner};
 use super::middle_boss::{self, MiddleBossSpawner};
+use crate::main_game::enemy::enemy_list;
 use crate::{
     game_state::GameState,
     system_consts,
@@ -10,7 +11,7 @@ use crate::{
 };
 use bevy::{ecs::query, prelude::*, *};
 use std::{io::Read, ops::Deref, panic, path::Path};
-const ENEMY_LIST_PATH: &str = "assets/enemy_list.csv";
+pub const ENEMY_LIST_PATH: &str = "assets/enemy_list.csv";
 #[derive(Component)]
 pub struct EnemyGenerator {
     generate_data_list: Vec<EnemyGenerateData>,
@@ -23,7 +24,12 @@ pub struct EnemyGenerateTimeStopper;
 
 impl EnemyGenerator {
     pub fn new() -> Self {
-        let str = get_string_list(ENEMY_LIST_PATH);
+        //let str = get_string_list(ENEMY_LIST_PATH);
+        let str: Vec<String> = enemy_list::ENEMY_LIST_STR
+            .to_string()
+            .split('\n')
+            .map(|s| s.to_string())
+            .collect();
         dbg!(&str);
         Self {
             generate_data_list: generate_enemy_generate_data_list(&str[1..]),
@@ -122,7 +128,7 @@ enum EnemyTypeData {
     Enemy1(enemy_1::Enemy1Spawner),
     Enemy2(enemy_2::Enemy2Spawner),
     MiddleBoss(middle_boss::MiddleBossSpawner),
-    BossEnemy(boss_enemy::BossEnemySpawner)
+    BossEnemy(boss_enemy::BossEnemySpawner),
 }
 
 fn get_string_list(path: &str) -> Vec<String> {

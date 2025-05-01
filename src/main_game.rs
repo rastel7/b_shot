@@ -13,6 +13,7 @@ pub mod player;
 pub mod player_invisible_effect;
 pub mod score;
 pub mod start_effect;
+pub mod update_enemy_list;
 pub fn setup_main_game_system_set(mut commands: Commands, zero_texture: Res<ZeroTexture>) {
     player::setup_player(commands, zero_texture);
 }

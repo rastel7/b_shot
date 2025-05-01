@@ -7,5 +7,8 @@ pub mod enemy_2;
 pub mod enemy_bullet;
 pub mod enemy_reader;
 pub mod middle_boss;
+pub mod enemy_list;
+
 pub use enemy::*;
 pub use middle_boss::*;
+pub use enemy_reader::*;

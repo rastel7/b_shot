@@ -77,6 +77,10 @@ pub fn read_high_score() -> u32 {
 }
 
 pub fn save_score(new_score: u32) {
+    if(cfg!(target_arch = "wasm32")){
+        info!("skip save");
+        return;
+    }
     if read_high_score() > new_score {
         return;
     };

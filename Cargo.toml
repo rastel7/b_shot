@@ -13,3 +13,8 @@ bevy_remote_inspector = "0.1.0"
 
 [profile.dev]
 opt-level = 1
+
+[[example]]
+name = "update_enemy_list"
+path = "src/main_game/update_enemy_list.rs"
+
