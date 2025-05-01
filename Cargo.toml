@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 bevy = "0.15" # make sure this is the latest version
 bevy_aseprite_ultra = "0.4.1"
+[target.'cfg(target_arch = "x86_64")'.dependencies]
 bevy_remote_inspector = "0.1.0"
 rand = "0.9.1"
 
