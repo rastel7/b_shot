@@ -139,9 +139,9 @@ pub fn spawn_score_tip(
     let max_strew_power = 80.0;
     for event in reader.read() {
         for _ in 0..event.num {
-            let direction = Vec2::new(rand::random_range(-1.0..1.0), rand::random_range(-1.0..1.0))
+            let direction = Vec2::new(rand::thread_rng() .gen_range(-1.0..1.0), rand::thread_rng().gen_range(-1.0..1.0))
                 .normalize_or(Vec2::Y);
-            let velocity = direction * max_strew_power * rand::random_range(0.5..1.0);
+            let velocity = direction * max_strew_power * rand::thread_rng().gen_range(0.5..1.0);
 
             let entity = commands
                 .reborrow()

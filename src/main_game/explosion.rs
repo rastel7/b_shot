@@ -76,12 +76,12 @@ fn repeat_explosion(
     for _ in 0..count {
         let position: Vec2 = default_position
             + Vec2::new(
-                rand::rng().random_range((-1.0)..(1.0)),
-                rand::rng().random_range((-1.0)..(1.0)),
+                rand::thread_rng().gen_range((-1.0)..(1.0)),
+                rand::thread_rng().gen_range((-1.0)..(1.0)),
             )
             .normalize_or_zero()
                 * range
-                * (rand::rng().random_range((0.0)..(1.0)));
+                * (rand::thread_rng().gen_range((0.0)..(1.0)));
         spawn_explosion(commands, position, &zero_texture);
     }
 }

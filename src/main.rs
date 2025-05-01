@@ -11,8 +11,10 @@ use bevy::{
     prelude::*,
     window::WindowResolution,
 };
-use bevy_aseprite_ultra::prelude::*;
+#[cfg(target_arch = "x86_64")]
 use bevy_remote_inspector::RemoteInspectorPlugins;
+
+use bevy_aseprite_ultra::prelude::*;
 use collision::*;
 use game_state::GameState;
 use main_game::enemy::enemy_bullet::{enemy_bullet, enemy_bullet_0};
@@ -48,20 +50,22 @@ fn main() {
         ..default()
     };
     let primary_window = Some(window);
-    App::new()
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window,
-                    ..default()
-                })
-                .set(ImagePlugin {
-                    default_sampler: ImageSamplerDescriptor::nearest(),
-                }),
-        )
-        .add_plugins(AsepriteUltraPlugin)
-        .add_plugins(RemoteInspectorPlugins)
-        .add_plugins(FrameTimeDiagnosticsPlugin::default())
+    let mut app = App::new();
+    app.add_plugins(
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window,
+                ..default()
+            })
+            .set(ImagePlugin {
+                default_sampler: ImageSamplerDescriptor::nearest(),
+            }),
+    )
+    .add_plugins(AsepriteUltraPlugin);
+    #[cfg(target_arch = "x86_64")]
+    app.add_plugins(bevy_remote_inspector::RemoteInspectorPlugins);
+
+    app.add_plugins(FrameTimeDiagnosticsPlugin::default())
         .insert_resource(ClearColor(Color::srgb(0.6, 0.6, 0.7)))
         .insert_resource::<score::GameScore>(score::GameScore::default())
         .insert_resource::<life::Life>(life::Life::new())
@@ -76,10 +80,7 @@ fn main() {
         .add_systems(Startup, init_game)
         .add_systems(
             PostStartup,
-            (
-                fps::generate_fps_drawer,
-                score::init_score_renderer,
-            ),
+            (fps::generate_fps_drawer, score::init_score_renderer),
         )
         .add_systems(
             OnEnter(GameState::TitleMenu),

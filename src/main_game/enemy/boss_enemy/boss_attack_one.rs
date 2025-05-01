@@ -23,7 +23,13 @@ pub fn update_boss_attack_one(
 ) {
     let freq = 0.6;
     let delta_time = time.delta().as_secs_f32();
-    let spawn_candidates = [(100.0, -30.0),(80.0, -30.0), (60.0, -35.0), (40.0, -40.0), (20.0, -45.0)];
+    let spawn_candidates = [
+        (100.0, -30.0),
+        (80.0, -30.0),
+        (60.0, -35.0),
+        (40.0, -40.0),
+        (20.0, -45.0),
+    ];
     for (mut boss_attack, transform, enemy, entity) in query.iter_mut() {
         if enemy.hp_index != 0 {
             commands.entity(entity).remove::<BossEnemyAttackOne>();
@@ -34,12 +40,12 @@ pub fn update_boss_attack_one(
             > ((boss_attack.generated_time + delta_time) % freq);
         boss_attack.generated_time += delta_time;
         if need_spawn_bit {
-            let x = if rand::rng().random_bool(0.5) {
+            let x = if rand::thread_rng().gen_bool(0.5) {
                 1.0
             } else {
                 -1.0
             };
-            let id: usize = rand::rng().random::<u32>() as usize % spawn_candidates.len();
+            let id: usize = rand::thread_rng().gen_range(0..spawn_candidates.len());
             let position: Vec2 = Vec2::new(
                 spawn_candidates[id].0 * x + transform.translation.x,
                 spawn_candidates[id].1 + transform.translation.y,
