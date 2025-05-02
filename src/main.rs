@@ -68,6 +68,7 @@ fn main() {
     app.add_plugins(FrameTimeDiagnosticsPlugin::default())
         .insert_resource(ClearColor(Color::srgb(0.6, 0.6, 0.7)))
         .insert_resource::<score::GameScore>(score::GameScore::default())
+        .insert_resource::<score::HighScore>(score::HighScore::default())
         .insert_resource::<life::Life>(life::Life::new())
         .init_state::<GameState>()
         .add_event::<ExplosionEvent>()

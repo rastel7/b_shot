@@ -17,6 +17,8 @@ const SCORE_PATH: &str = "./data.log";
 const LIFEUP_SCORE: u32 = 50000;
 #[derive(Resource, Default)]
 pub struct GameScore(u32);
+#[derive(Resource,Default)]
+pub struct HighScore(u32);
 impl GameScore {
     pub fn reset_score(&mut self) {
         self.0 = 0;
@@ -60,8 +62,9 @@ pub struct ScoreTipEvent {
     pub position: Vec2,
     pub score: u32,
 }
-pub fn reset_score(mut game_score: ResMut<GameScore>) {
-    game_score.0 = read_high_score();
+pub fn reset_score(mut game_score: ResMut<GameScore>, high_score : Res<HighScore>) {
+    let highscore = read_high_score();
+    game_score.0 = game_score.0.max(read_high_score()).max(highscore);
     info!("reset {}", game_score.0);
 }
 
@@ -76,7 +79,8 @@ pub fn read_high_score() -> u32 {
     return buf.parse::<u32>().unwrap_or(0);
 }
 
-pub fn save_score(new_score: u32) {
+pub fn save_score(new_score: u32,high_score:&mut ResMut<HighScore>) {
+    high_score.0 = new_score.max(new_score);
     if(cfg!(target_arch = "wasm32")){
         info!("skip save");
         return;

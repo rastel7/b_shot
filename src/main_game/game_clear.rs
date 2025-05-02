@@ -100,7 +100,8 @@ pub fn update_game_clear(
     score_tip_query: Query<&ScoreTip>,
     game_score: Res<GameScore>,
     mut boss_bgm_query:Query<Entity,(With<BossBGM>,Without<crate::bgm::DecreaseBGM>)> , 
-    mut stage_bgm_query:Query<Entity,(With<StageBGM>,Without<crate::bgm::DecreaseBGM>)>
+    mut stage_bgm_query:Query<Entity,(With<StageBGM>,Without<crate::bgm::DecreaseBGM>)>,
+    mut high_score : ResMut<score::HighScore>
 ) {
     
     
@@ -181,7 +182,7 @@ pub fn update_game_clear(
         }
         // タイトル遷移
         if game_clear.generated_time >= 4.0 {
-            score::save_score(game_score.get_score());
+            score::save_score(game_score.get_score(),&mut high_score);
             app_state.set(crate::GameState::TitleMenu);
         }
     }
